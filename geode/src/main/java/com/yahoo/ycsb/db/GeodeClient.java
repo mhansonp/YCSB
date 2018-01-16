@@ -84,6 +84,17 @@ public class GeodeClient extends DB {
    */
   private static final String TOPOLOGY_P2P_VALUE = "p2p";
 
+  /**
+   * [Pivotal Cloud Cache] Username for developer or higher role.
+   */
+  private static final String SECURITY_USERNAME = "security-username";
+
+  /**
+   * [Pivotal Cloud Cache] Password for username above.
+   */
+  private static final String SECURITY_PASSWORD = "security-password";
+
+
   private GemFireCache cache;
 
   /**
@@ -100,6 +111,9 @@ public class GeodeClient extends DB {
     int serverPort = 0;
     String locatorStr = null;
 
+    String username = null;
+    String password = null;
+
     if (props != null && !props.isEmpty()) {
       String serverPortStr = props.getProperty(SERVERPORT_PROPERTY_NAME);
       if (serverPortStr != null) {
@@ -107,6 +121,9 @@ public class GeodeClient extends DB {
       }
       serverHost = props.getProperty(SERVERHOST_PROPERTY_NAME, SERVERHOST_PROPERTY_DEFAULT);
       locatorStr = props.getProperty(LOCATOR_PROPERTY_NAME);
+
+      username = props.getProperty(SECURITY_USERNAME);
+      password = props.getProperty(SECURITY_PASSWORD);
 
       String topology = props.getProperty(TOPOLOGY_PROPERTY_NAME);
       if (topology != null && topology.equals(TOPOLOGY_P2P_VALUE)) {
@@ -124,7 +141,13 @@ public class GeodeClient extends DB {
     if (locatorStr != null) {
       locator = new DistributionLocatorId(locatorStr);
     }
-    ClientCacheFactory ccf = new ClientCacheFactory();
+
+    final Properties cacheFactoryProperties = new Properties();
+    cacheFactoryProperties.setProperty(SECURITY_USERNAME, username);
+    cacheFactoryProperties.setProperty(SECURITY_PASSWORD, password);
+    cacheFactoryProperties.setProperty("security-client-auth-init", "com.yahoo.ycsb.db.ClientAuthInitialize.create");
+
+    ClientCacheFactory ccf = new ClientCacheFactory(cacheFactoryProperties);
     ccf.setPdxReadSerialized(true);
     if (serverPort != 0) {
       ccf.addPoolServer(serverHost, serverPort);
